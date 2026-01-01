@@ -18,15 +18,13 @@
    git clone [https://github.com/kimzam30/my-homelab-setup.git](https://github.com/kimzam30/my-homelab-setup.git)
    cd my-homelab-setup
 
-    Configure Environment Duplicate the example file and fill in your secrets:
 
-```Bash
-cp .env.example .env
-Edit .env with your PUID, PGID, and NAS_ROOT path.
-Deploy
+- Configure Environment Duplicate the example file and fill in your secrets:
 
-```
-```Bash
+    cp .env.example .env
+    Edit .env with your PUID, PGID, and NAS_ROOT path.
+    Deploy
+
     docker-compose up -d
 ```
 
@@ -40,4 +38,4 @@ Deploy
 
 ## 🔒 Security
 
-This repository uses "dummy" config files. Sensitive data (databases, .env files) are gitignored.
+- This repository uses "dummy" config files. Sensitive data (databases, .env files) are gitignored.
