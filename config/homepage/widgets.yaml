@@ -1,12 +1,10 @@
----
-# For configuration options and examples, please see:
-# https://gethomepage.dev/configs/info-widgets/
-
 - resources:
     cpu: true
     memory: true
-    disk: /
-
+    disk:
+      - /mnt/c
+      - /mnt/d
+      - /mnt/e
 - search:
-    provider: duckduckgo
+    provider: "duckduckgo"
     target: _blank

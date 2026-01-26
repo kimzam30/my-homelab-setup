@@ -7,10 +7,36 @@
         description: Ad Blocker & DNS
         pihole_api_key: "PASTE_YOUR_LONG_API_KEY_HERE"
         version: "v5 or v6  # depending on your Pi-hole version"
+        widget:
+          type: pihole
+          url: http://pihole/admin
+          key: "PASTE_YOUR_LONG_API_KEY_HERE"
+          version: "v5 or v6  # depending on your Pi-hole version"
+
     - Uptime Kuma:
         icon: uptime-kuma.png
         href: http://YOURTAILSCALEIP:3001
         description: Server Status Monitor
+    
+    - Gitea:
+        icon: gitea.png
+        href: YOURTAILSCALEIP:3002
+        description: Private Git Hosting
+        widget:
+          type: gitea
+          url: http://gitea:3000
+          key: "URAPIKEYHERE"
+          version: 1.16.0
+    
+    - Speedtest:
+        icon: speedtest-tracker.png
+        href: YOURTAILSCALEIP:8083
+        description: Internet Speed Monitor
+        widget:
+          type: speedtest
+          url: http://speedtest-tracker:
+
+    
 
 # GROUP 2: Tools
 - My Server:
@@ -18,13 +44,18 @@
         icon: filebrowser.png
         href: http://YOURTAILSCALEIP:8081
         description: Access C:/Users
-    - Terminal:
-        icon: terminal.png
-        href: #
-        description: SSH via VS Code
 
-# GROUP 3: widgets
-- widget:
-    type: pihole
-    url: http://pihole:80 # Internal docker address
-    key: "PASTE_YOUR_LONG_API_KEY_HERE"
+    - VS Code Remote:
+        icon: terminal.png
+        href: https://vscode.dev/tunnel/KIMMAIN
+        description: VS Code Remote tunnel
+
+    - Jellyfin:
+        icon: jellyfin.png
+        href: YOURTAILSCALEIP:8096
+        description: Media Server
+        widget:
+          type: jellyfin
+          url: http://jellyfin:8096
+          key: "PASTE_YOUR_LONG_API_KEY_HERE"
+

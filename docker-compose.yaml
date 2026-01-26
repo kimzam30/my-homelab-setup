@@ -61,7 +61,6 @@ volumes:
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      # We change the web port to 8081 to avoid conflict with Nginx/Homepage
       - "8081:80" 
     environment:
       TZ: 'Asia/Kuala_Lumpur'
@@ -70,3 +69,52 @@ volumes:
       - './config/pihole/etc-pihole:/etc/pihole'
       - './config/pihole/etc-dnsmasq.d:/etc/dnsmasq.d'
     restart: unless-stopped
+
+  # 6. Gitea (Git Hosting)
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    restart: unless-stopped
+    environment:
+      USER_UID: 1000
+      USER_GID: 1000
+      GITEA__server__SSH_PORT: 2222
+    volumes:
+      - ./config/gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3002:3000"
+      - "2222:22"
+
+  # 7. Speedtest Tracker
+  speedtest-tracker:
+        image: lscr.io/linuxserver/speedtest-tracker:latest
+        container_name: speedtest-tracker
+        restart: unless-stopped
+        environment:
+            - PUID=1000
+            - PGID=1000
+            - DB_CONNECTION=sqlite
+            - SPEEDTEST_SCHEDULE=0 * * * *
+            - APP_KEY=base64:aRandomGeneratedKeyHere==
+        volumes:
+            - C:/nginx-proxy/speedtest:/config
+        ports:
+            - "8083:80"
+  
+  # 8. jellyfin (Media Server)
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kuala_Lumpur
+    volumes:
+      - ./config/jellyfin/config:/config
+      - ./cache/jellyfin/cache:/cache
+      - D:/Expansion/JELLYFINMEDIA:/media
+    ports:
+      - "8096:8096"
