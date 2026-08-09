@@ -1,7 +1,5 @@
-version: "3.8"
-
 services:
-  # 1. Homepage (Your Dashboard)
+  # 1. Homepage (Dashboard)
   homepage:
     image: gethomepage/homepage:latest
     container_name: homepage
@@ -23,7 +21,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ${NAS_ROOT}:/srv               # The actual storage folder on your host
+      - ${NAS_ROOT}:/srv
       - ./config/filebrowser/filebrowser.db:/database.db
       - ./config/filebrowser/settings.json:/.filebrowser.json
     restart: unless-stopped
@@ -51,20 +49,17 @@ services:
       - uptime-kuma-data:/app/data
     restart: always
 
-volumes:
-  uptime-kuma-data:
-
-# 5. Pi-hole (Ad Blocker)
+  # 5. Pi-hole (DNS Ad Blocker)
   pihole:
-    container_name: pihole
     image: pihole/pihole:latest
+    container_name: pihole
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      - "8081:80" 
+      - "8081:80"
     environment:
       TZ: 'Asia/Kuala_Lumpur'
-      WEBPASSWORD: ${PIHOLE_PASSWORD} 
+      WEBPASSWORD: ${PIHOLE_PASSWORD}
     volumes:
       - './config/pihole/etc-pihole:/etc/pihole'
       - './config/pihole/etc-dnsmasq.d:/etc/dnsmasq.d'
@@ -74,10 +69,9 @@ volumes:
   gitea:
     image: gitea/gitea:latest
     container_name: gitea
-    restart: unless-stopped
     environment:
-      USER_UID: 1000
-      USER_GID: 1000
+      USER_UID: ${PUID}
+      USER_GID: ${PGID}
       GITEA__server__SSH_PORT: 2222
     volumes:
       - ./config/gitea:/data
@@ -86,35 +80,40 @@ volumes:
     ports:
       - "3002:3000"
       - "2222:22"
+    restart: unless-stopped
 
   # 7. Speedtest Tracker
   speedtest-tracker:
-        image: lscr.io/linuxserver/speedtest-tracker:latest
-        container_name: speedtest-tracker
-        restart: unless-stopped
-        environment:
-            - PUID=1000
-            - PGID=1000
-            - DB_CONNECTION=sqlite
-            - SPEEDTEST_SCHEDULE=0 * * * *
-            - APP_KEY=base64:aRandomGeneratedKeyHere==
-        volumes:
-            - C:/nginx-proxy/speedtest:/config
-        ports:
-            - "8083:80"
-  
-  # 8. jellyfin (Media Server)
+    image: lscr.io/linuxserver/speedtest-tracker:latest
+    container_name: speedtest-tracker
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Asia/Kuala_Lumpur
+      - DB_CONNECTION=sqlite
+      - SPEEDTEST_SCHEDULE=0 * * * *
+      - APP_KEY=${SPEEDTEST_APP_KEY}
+    volumes:
+      - ${SPEEDTEST_CONFIG}:/config
+    ports:
+      - "8083:80"
+    restart: unless-stopped
+
+  # 8. Jellyfin (Media Server)
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
-    restart: unless-stopped
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=${PUID}
+      - PGID=${PGID}
       - TZ=Asia/Kuala_Lumpur
     volumes:
       - ./config/jellyfin/config:/config
       - ./cache/jellyfin/cache:/cache
-      - D:/Expansion/JELLYFINMEDIA:/media
+      - ${MEDIA_ROOT}:/media
     ports:
       - "8096:8096"
+    restart: unless-stopped
+
+volumes:
+  uptime-kuma-data:
