@@ -1,105 +1,115 @@
-# 🏠 My HomeLab Setup
+# My Homelab Setup
 
-- A centralized, Docker-based infrastructure for managing my NAS, services, and monitoring.
+Self-hosted homelab stack — dashboard, NAS, DNS ad-blocking, media streaming, Git hosting, and uptime monitoring — defined as code with Docker Compose and reachable from anywhere over a private Tailscale mesh.
 
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
-![Tailscale](https://img.shields.io/badge/Tailscale-18181B?style=for-the-badge&logo=tailscale&logoColor=white)
-
-> A centralized, production-grade homelab environment orchestrated with Docker Compose. This repository manages my NAS file systems, DNS ad-blocking, media streaming, code hosting, and service monitoring, all secured behind a private Tailscale mesh network.
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-009639?style=flat-square&logo=nginx&logoColor=white)
+![Tailscale](https://img.shields.io/badge/Tailscale-18181B?style=flat-square&logo=tailscale&logoColor=white)
+![License](https://img.shields.io/github/license/kimzam30/my-homelab-setup?style=flat-square)
 
 ---
 
-## ✨ Features & Services
+## Services
 
-This stack replaces multiple paid subscriptions with self-hosted open-source alternatives:
-
-| Service               | Type                | Description                                                                                                                                                                           |
-| :-------------------- | :------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Homepage**          | 🖥️ Dashboard        | A modern, fully static dashboard. It integrates with Docker to show real-time CPU/RAM usage, disk space (C:/D: drives), and the "Up/Down" status of all containers.                   |
-| **FileBrowser**       | 📂 NAS Storage      | Turns the server into a full NAS (Network Attached Storage). Allows for web-based file management, uploading, and downloading of files from the physical hard drives via any browser. |
-| **Jellyfin**          | 🍿 Media Server     | The open-source alternative to Netflix/Plex. Streams movies and TV shows from the local `D:/Media` storage to tablets, phones, and smart TVs with metadata scraping.                  |
-| **Gitea**             | 🐙 Code Hosting     | A self-hosted Git service (similar to GitHub). Provides private repositories for version control, project management, and storing CI/CD workflows.                                    |
-| **Pi-hole**           | 🛡️ Network Security | A DNS sinkhole that blocks ads, trackers, and malicious domains across the entire network before they reach client devices.                                                           |
-| **Speedtest Tracker** | 📉 Network Monitor  | Automatically runs internet speed tests every hour. Logs historical data (Ping, Upload, Download) to monitor ISP consistency and uptime.                                              |
-| **Uptime Kuma**       | 💓 Health Checks    | Monitors the heartbeat of all services. Sends alerts if a service goes down or if the Tailscale tunnel disconnects.                                                                   |
+| Service | Role | Port | What it does |
+|---|---|---|---|
+| **Homepage** | Dashboard | `3000` | Static dashboard wired to the Docker socket for live container status, CPU/RAM, and disk usage. |
+| **FileBrowser** | NAS | `8080` | Web file manager over the host's physical drives — browse, upload, and download from any device. |
+| **Nginx** | Reverse proxy | `80` | Single entry point routing to each service. |
+| **Uptime Kuma** | Monitoring | `3001` | Heartbeat checks and alerting when a service or the tunnel drops. |
+| **Pi-hole** | DNS / ad-blocking | `53`, `8081` | Network-wide DNS sinkhole for ads, trackers, and malicious domains. |
+| **Gitea** | Git hosting | `3002`, `2222` | Private Git remotes for work that shouldn't live on GitHub. |
+| **Speedtest Tracker** | Network monitor | `8083` | Hourly speed tests logged over time to spot ISP degradation. |
+| **Jellyfin** | Media server | `8096` | Streams media from local storage with metadata scraping. |
 
 ---
 
-## 🏗️ Architecture & Stack
-
-This setup runs on a **"Service-First"** architecture where every component is containerized and configuration is decoupled from the application logic.
+## Architecture
 
 ```mermaid
 graph TD
-    User[User / Remote Dev] -->|Tailscale VPN| Host[Home Server]
-    Host --> Nginx[Nginx Reverse Proxy]
+    User[Remote device] -->|Tailscale mesh| Host[Home server]
+    Host --> Nginx[Nginx reverse proxy]
 
-    subgraph Docker Containers
-        Nginx -->|Port 3000| Homepage[Homepage Dashboard]
-        Nginx -->|Port 8080| FB[FileBrowser NAS]
-        Nginx -->|Port 3001| UK[Uptime Kuma]
-        Nginx -->|Port 8081| Pihole[Pi-hole DNS]
-        Nginx -->|Port 8096| Jellyfin[Jellyfin Media]
-        Nginx -->|Port 8083| Speedtest[Speedtest Tracker]
-        Nginx -->|Port 3002| Gitea[Gitea Code Host]
+    subgraph Docker
+        Nginx --> Homepage[Homepage :3000]
+        Nginx --> FB[FileBrowser :8080]
+        Nginx --> UK[Uptime Kuma :3001]
+        Nginx --> Pihole[Pi-hole :8081]
+        Nginx --> Jellyfin[Jellyfin :8096]
+        Nginx --> Speedtest[Speedtest :8083]
+        Nginx --> Gitea[Gitea :3002]
     end
 
-    UK -.->|Monitors| Pihole
-    UK -.->|Monitors| FB
-    FB -->|Mounts| HDD[Physical Storage]
-    Jellyfin -->|Reads| HDD
-    Gitea -->|Persists| HDD
+    UK -.->|monitors| Pihole
+    UK -.->|monitors| FB
+    FB -->|bind mount| HDD[(Physical storage)]
+    Jellyfin -->|reads| HDD
+    Gitea -->|persists| HDD
 ```
 
-## 🚀 Getting Started
+Configuration is decoupled from the containers: every service reads its config from a bind-mounted directory under `config/`, and all secrets come from `.env`, which is gitignored.
 
-- This repository follows **_infrastructure as code(Iac)_** principles. Secrets are managed via environment variables and configuration are mounted dynamicaly
+---
+
+## Setup
 
 ### Prerequisites
 
-- Docker engine & Docker compose
-- Tailscale(Optional,but recommended for remote access)
+- Docker Engine and Docker Compose v2
+- Tailscale (optional, but the intended way to reach the stack remotely)
 
-### 1. Clone the Repo
+### 1. Clone
 
 ```bash
-git clone [https://github.com/kimzam30/my-homelab-setup.git](https://github.com/kimzam30/my-homelab-setup.git)
+git clone https://github.com/kimzam30/my-homelab-setup.git
 cd my-homelab-setup
 ```
 
-### 2.Configure Environment Duplicate the example file and fill in your secrets:
+### 2. Configure
 
+```bash
+cp .env.example .env
 ```
-    cp .env.example .env
-```
 
-Open .env and configure the following:
+Fill in `.env`:
 
-```
-# System user ID
-    PUID=1000
-    PGID=1000
+```ini
+# Host user — run `id` to find yours
+PUID=1000
+PGID=1000
 
-# Path to your hard drives or NAS
-    NAS_ROOT=/path/to/your/disk
+# Root of the storage you want FileBrowser to serve
+NAS_ROOT=/path/to/your/disk
 
-# Security
-    PIHOLE=PASSWORD=yoursecurepassword
+# Pi-hole admin password
+PIHOLE_PASSWORD=change-me
+
+# Media library root for Jellyfin
+MEDIA_ROOT=/path/to/your/media
+
+# Speedtest Tracker config directory
+SPEEDTEST_CONFIG=/path/to/speedtest/config
+
+# Laravel app key for Speedtest Tracker — generate a real one, do not reuse the example
+SPEEDTEST_APP_KEY=base64:...
 ```
 
 ### 3. Deploy
 
-```
-    docker-compose up -d
+```bash
+docker compose up -d
 ```
 
-## 📂 Configuration
+Check everything came up:
 
-    Homepage: configs located in config/homepage/
-    Nginx: rules located in config/nginx/nginx.conf
-    FileBrowser: settings in config/filebrowser/
+```bash
+docker compose ps
+```
+
+---
+
+## Layout
 
 ```
 my-homelab-setup/
@@ -107,30 +117,25 @@ my-homelab-setup/
 │   ├── homepage/        # Dashboard layout (services.yaml, widgets.yaml)
 │   ├── filebrowser/     # NAS settings and local DB
 │   ├── nginx/           # Proxy routing rules
-│   ├── pihole/          # DNS lists and adblock configs
-│   ├── jellyfin/        # Media server user configs
-│   └── gitea/           # Git server configs
-├── .env.example         # Template for secret variables
-├── .gitignore           # Security rules (prevents leaking secrets & data)
-└── docker-compose.yaml  # The master stack definition
+│   ├── pihole/          # DNS lists and adblock config
+│   ├── jellyfin/        # Media server config
+│   └── gitea/           # Git server config
+├── .env.example         # Template for secrets and host paths
+├── .gitignore           # Keeps secrets and service data out of git
+└── docker-compose.yaml  # Stack definition
 ```
 
-## 🔒 Security & Privacy
+---
 
-- This repository uses "dummy" config files. Sensitive data (databases, .env files) are gitignored.
-- **Zero-Trust Access:** Services are not exposed to the public internet.Access is restricted to the local network or via **Tailscale tunnels**.
-- **Secret Management:** Sensitive data (password,API keys) are excluded from version control using `.gitignore` and `.env` files.
-- **Non-Root Execution:** Containers run with specific PUID/PGID to prevent privilege escalation issues on the host system
+## Security model
 
-## 🤝Contributing
+- **No public exposure.** Nothing is port-forwarded. Access is local-network or Tailscale only.
+- **Secrets stay out of git.** Passwords and keys live in `.env`; service databases and state directories are gitignored.
+- **Non-root containers.** Services run under an explicit `PUID`/`PGID` rather than as root on the host.
+- **Committed configs are templates.** Anything checked in is a sanitised example, not a live config.
 
-This is a personal homelab configuration, but suggestions are welcome!
+---
 
-1. Fork the project
-2. Create your Feature Branch (` git checkout -b feature/AmazingFeature`)
-3. Commit your changes (` git commit -m "Add some AmazingFeature"`)
-4. Push to the branch (` git push origin feature/AmazingFeature`)
+## License
 
-#
-
-built by kimzam 
+MIT — see [LICENSE](LICENSE).
